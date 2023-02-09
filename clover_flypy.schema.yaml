@@ -2,8 +2,8 @@
 # encoding: utf-8
 
 schema:
-  schema_id: clover
-  name: 🍀️四叶草简体拼音
+  schema_id: clover_flypy
+  name: 🍀️四叶草小鹤双拼
   version: "1.0.0"
   author:
     - fkxxyz - https://www.fkxxyz.com
