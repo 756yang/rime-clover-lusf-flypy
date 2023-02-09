@@ -1,0 +1,263 @@
+# Rime schema
+# encoding: utf-8
+
+schema:
+  schema_id: clover
+  name: 🍀️四叶草简体拼音
+  version: "1.0.0"
+  author:
+    - fkxxyz - https://www.fkxxyz.com
+    - yang - <yang98586@163.com>
+  description: |
+    由🍀️四叶草亲自定制，特点：
+      1. 结合搜狗输入法的输入习惯
+      2. 默认开启 emoji 表情支持
+      3. 加上很多特殊符号的输入支持
+      4. 繁简切换支持
+      #5. 许多智能纠错
+      5. 使用小鹤双拼方案（无辅助码）
+  dependencies:
+    - emoji
+
+switches:
+  - name: zh_simp_s2t
+    reset: 0
+    states: [ 简, 繁 ]
+  - name: emoji_suggestion
+    reset: 1
+    states: [ "🈚️️\uFE0E", "🈶️️\uFE0F" ]
+  - name: symbol_support
+    reset: 1
+    states: [ "无符", "符" ]
+  - name: ascii_punct
+    reset: 0
+    states: [ 。，, ．， ]
+  - name: full_shape
+    reset: 0
+    states: [ 半, 全 ]
+  - name: ascii_mode
+    reset: 0
+    states: [ 中, 英 ]
+
+engine:
+  processors:
+    - ascii_composer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - lua_translator@date_translator # 动态日期时间输入
+    - table_translator@custom_phrase # 用户自定义词典
+    - script_translator
+  filters:
+    - simplifier@emoji_suggestion
+    - simplifier@symbol_support
+    - simplifier
+    - uniquifier
+
+simplifier:
+  option_name: zh_simp_s2t
+  opencc_config: s2t.json
+
+emoji_suggestion:
+  opencc_config: emoji.json
+  option_name: emoji_suggestion
+  tips: all
+
+symbol_support:
+  opencc_config: symbol.json
+  option_name: symbol_support
+  tips: all
+
+speller:
+  alphabet: zyxwvutsrqponmlkjihgfedcba
+  delimiter: " '"
+  algebra:
+    - erase/^xx$/
+    - erase/^hm$/
+    - erase/^m$/
+    - erase/^n$/
+    - erase/^ng$/
+
+    # 模糊音区域
+    # 依据个人情况修改注释～
+    # 注释格式：键盘的输入码 -> 转化后的输入码
+
+    # 声母部分
+    # - derive/^([z])h/$1/ # z -> zh
+    # - derive/^([z])([^h])/$1h$2/ # zh -> z
+    # - derive/^([c])h/$1/ # c -> ch
+    # - derive/^([c])([^h])/$1h$2/ # ch -> c
+    # - derive/^([s])h/$1/ # s -> sh
+    # - derive/^([s])([^h])/$1h$2/ # sh -> s
+    # - derive/^l/n/ # n -> l
+    # - derive/^n/l/ # l -> n
+    # - derive/^r/l/ # l -> r
+    # - derive/^r/y/ # y -> r
+    # - derive/^hu$/fu/ # fu -> hu
+    # - derive/^fu$/hu/ # hu -> fu
+
+    # 韵母部分
+    - derive/([^iu])([a])n$/$1$2ng/ # ang -> an
+    - derive/([^iu])([a])ng$/$1$2n/ # an -> ang
+    - derive/([e])n$/$1ng/ # eng -> en
+    - derive/([e])ng$/$1n/ # en -> eng
+    # - derive/([i])n$/$1ng/ # ing -> in
+    # - derive/([i])ng$/$1n/ # in -> ing
+    # - derive/([i])an$/$1ang/ # iang -> ian
+    # - derive/([i])ang$/$1an/ # ian -> iang
+    # 由于小鹤双拼特性，无需 uang <-> iang
+
+    # 其它模糊音
+    # - derive/^hui$/fei/ # fei -> hui
+    # - derive/^fei$/hui/ # hui -> fei
+    # - derive/^huang$/wang/ # wang -> huang
+    # - derive/^wang$/huang/ # huang -> wang
+    # - derive/^([bpmfw])eng$/$1ong/ # bpmfw 后接 ong -> bpmfw 后接 eng
+
+    # 小鹤双拼码表
+    - derive/^([jqxy])u$/$1v/
+    - derive/^([aoe])([ioun])$/$1$1$2/
+    - xform/^([aoe])(ng)?$/$1$1$2/
+    - xform/iu$/Q/
+    - xform/(.)ei$/$1W/
+    - xform/uan$/R/
+    - xform/[uv]e$/T/
+    - xform/un$/Y/
+    - xform/^sh/U/
+    - xform/^ch/I/
+    - xform/^zh/V/
+    - xform/uo$/O/
+    - xform/ie$/P/
+    - xform/i?ong$/S/
+    - xform/ing$|uai$/K/
+    - xform/(.)ai$/$1D/
+    - xform/(.)en$/$1F/
+    - xform/(.)eng$/$1G/
+    - xform/[iu]ang$/L/
+    - xform/(.)ang$/$1H/
+    - xform/ian$/M/
+    - xform/(.)an$/$1J/
+    - xform/(.)ou$/$1Z/
+    - xform/[iu]a$/X/
+    - xform/iao$/N/
+    - xform/(.)ao$/$1C/
+    - xform/ui$/V/
+    - xform/in$/B/
+    - xlit/QWRTYUIOPSDFGHJKLZXCVBNM/qwrtyuiopsdfghjklzxcvbnm/
+
+    # 简拼支持
+    - abbrev/^(.).+$/$1/
+
+translator:
+  dictionary: clover
+  preedit_format:
+    # - xform/ // # 去掉上屏字符间空格
+  prism: clover_flypy
+
+punctuator:
+  import_preset: symbols
+  full_shape:
+    "`": "｀"
+    "~": "～"
+    "!": "！"
+    "@": "＠"
+    "#": "＃"
+    "$": "￥"
+    "%": "％"
+    "^": "……"
+    "&": "＆"
+    "*": "×"
+    "(": "（"
+    ")": "）"
+    "_": "——"
+    "+": "＋"
+    "-": "－"
+    "=": "＝"
+    "[": "【"
+    "]": "】"
+    "{": "｛"
+    "}": "｝"
+    "|": "｜"
+    "\\": "、"
+    "/": "、"
+    ";": "；"
+    "'": "‘"
+    ",": "，"
+    ".": "。"
+    "<": "《"
+    ">": "》"
+    "?": "？"
+  half_shape:
+    "`": "·"
+    "~": "～"
+    "!": "！"
+    "@": "@"
+    "#": "#"
+    "$": "￥"
+    "%": "%"
+    "^": "……"
+    "&": "&"
+    "*": "×"
+    "(": "（"
+    ")": "）"
+    "_": "——"
+    "+": "+"
+    "-": "-"
+    "=": "="
+    "[": "【"
+    "]": "】"
+    "{": "｛"
+    "}": "｝"
+    "|": "｜"
+    "\\": "、"
+    "/": "、"
+    ";": "；"
+    "'": "’"
+    ",": "，"
+    ".": "。"
+    "<": "《"
+    ">": "》"
+    "?": "？"
+
+key_binder:
+  import_preset: default
+  bindings:
+    __patch:
+      - key_bindings:/emacs_editing  # emacs 习惯
+      - key_bindings:/move_by_word_with_tab  # tab 在单词间切换
+      - key_bindings:/paging_with_minus_equal  # 减号等号翻页
+      - key_bindings:/paging_with_comma_period   # 逗号句号翻页
+      - key_bindings:/paging_with_brackets   # 中括号翻页
+      - clover.key_bindings:/numbered_mode_switch   # Ctrl+Shift+数字 切换开关
+      - clover.key_bindings:/windows_compatible_mode_switch   # Windows 兼容
+      - clover.key_bindings:/kp_enter_is_return   # 小键盘回车设为普通回车
+
+ascii_composer:
+  import_preset: default
+  good_old_caps_lock: true
+  switch_key:
+    Shift_L: commit_code   # 左 Shift 切换直接上屏字母
+    Shift_R: commit_code   # 右 Shift 切换直接上屏字母
+    Control_L: noop
+    Control_R: noop
+    Caps_Lock: noop
+    Eisu_toggle: clear
+
+custom_phrase:
+  dictionary: ""
+  user_dict: custom_phrase
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 1
